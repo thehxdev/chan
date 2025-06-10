@@ -15,7 +15,7 @@ void *producer(void *arg) {
     int i;
     Chan_t *ch = *(Chan_t**)arg;
 
-    for (i = 0; i < TO_PUSH && !chan_isclosed(ch); i++)
+    for (i = 0; i < TO_PUSH; i++)
         if (chan_push(ch, &i)) {
             printf("push error\n");
             break;

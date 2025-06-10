@@ -120,11 +120,18 @@ extern Chan_t *chan_new(size_t cap, size_t data_size) {
     if (!ch)
         return NULL;
 
-    assert(!queue_init(&ch->q, chan_cap(cap), data_size));
-    assert(!pthread_mutex_init(&ch->lock, NULL));
-    assert(!pthread_cond_init(&ch->pushed, NULL));
-    assert(!pthread_cond_init(&ch->poped, NULL));
+    int err = queue_init(&ch->q, chan_cap(cap), data_size);
+    assert(err == 0);
+    if (err) {
+        free(ch);
+        ch = NULL;
+        goto ret;
+    }
+    pthread_mutex_init(&ch->lock, NULL);
+    pthread_cond_init(&ch->pushed, NULL);
+    pthread_cond_init(&ch->poped, NULL);
 
+ret:
     return ch;
 }
 
@@ -135,6 +142,10 @@ extern int chan_push(Chan_t *ch, void *val) {
     pthread_mutex_lock(&ch->lock);
     // crash if channel is closed
     assert(!ch->closed);
+    if (ch->closed) {
+        err = 1;
+        goto ret;
+    }
     while (queue_isfull(&ch->q)) {
         pthread_cond_wait(&ch->poped, &ch->lock);
         // exit the function if a channel is closed after waiting
@@ -143,7 +154,8 @@ extern int chan_push(Chan_t *ch, void *val) {
             goto ret;
         }
     }
-    assert(!queue_enqueue(&ch->q, val));
+    err = queue_enqueue(&ch->q, val);
+    assert(err == 0);
     pthread_cond_signal(&ch->pushed);
 ret:
     pthread_mutex_unlock(&ch->lock);
@@ -161,10 +173,14 @@ extern int chan_pop(Chan_t *ch, void *dest) {
         }
         goto cont;
     }
-    while (queue_isempty(&ch->q))
+    while (queue_isempty(&ch->q)) {
         pthread_cond_wait(&ch->pushed, &ch->lock);
+        if (ch->closed)
+            goto unlock_ret;
+    }
 cont:
-    assert(!queue_dequeue(&ch->q, dest));
+    err = queue_dequeue(&ch->q, dest);
+    assert(err == 0);
     pthread_cond_signal(&ch->poped);
 unlock_ret:
     pthread_mutex_unlock(&ch->lock);
@@ -179,11 +195,6 @@ extern int chan_close(Chan_t *ch) {
     pthread_cond_broadcast(&ch->pushed);
     pthread_cond_broadcast(&ch->poped);
     return 0;
-}
-
-extern int chan_isclosed(Chan_t *ch) {
-    assert(ch);
-    return ch->closed;
 }
 
 extern void chan_destroy(Chan_t *ch) {

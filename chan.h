@@ -23,9 +23,6 @@ extern int chan_pop(Chan_t *ch, void *dest);
 // an assertion will cause the program to terminate.
 extern int chan_close(Chan_t *ch);
 
-// Check if a channel is closed.
-extern int chan_isclosed(Chan_t *ch);
-
 // Destroy and free all the memory that used by a channel.
 extern void chan_destroy(Chan_t *ch);
 
