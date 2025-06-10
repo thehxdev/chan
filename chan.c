@@ -175,8 +175,10 @@ extern int chan_pop(Chan_t *ch, void *dest) {
     }
     while (queue_isempty(&ch->q)) {
         pthread_cond_wait(&ch->pushed, &ch->lock);
-        if (ch->closed)
+        if (ch->closed) {
+            err = 1;
             goto unlock_ret;
+        }
     }
 cont:
     err = queue_dequeue(&ch->q, dest);
