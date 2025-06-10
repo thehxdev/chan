@@ -11,7 +11,7 @@ This library is written with `pthread` and it's a single `chan.c` file. To build
 make
 ```
 This will build an executable that uses `chan.c` and `chan.h` files. The test creates 4 producer threads that push integer
-values to the channel with a single consumer thread (main thread) that pops integers and prints them.
+values to the channel with 2 consumer threads. Consumer threads pop integer values from channel and print them.
 
 ## Public interface
 Read `chan.h` file. It's easy to understand :)

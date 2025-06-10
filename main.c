@@ -22,6 +22,19 @@ void *thread_routine(void *arg) {
     return NULL;
 }
 
+void *thread_reader_routine(void *arg) {
+    int i, v;
+    Chan_t *ch = *(Chan_t**)arg;
+    for (i = 0; i < TO_PUSH*2; i++) {
+        if (chan_pop(ch, &v)) {
+            printf("pop error\n");
+            break;
+        }
+        printf("%d: %d\n", i, v);
+    }
+    return NULL;
+}
+
 int main(void) {
     int i, v;
 
@@ -32,7 +45,9 @@ int main(void) {
     for (i = 0; i < NTHREADS; i++)
         pthread_create(&threads[i], NULL, thread_routine, &ch);
 
-    for (i = 0; i < TO_PUSH*NTHREADS; i++) {
+    pthread_t reader;
+    pthread_create(&reader, NULL, thread_reader_routine, &ch);
+    for (i = 0; i < TO_PUSH*2; i++) {
         if (chan_pop(ch, &v)) {
             printf("pop error\n");
             break;
@@ -42,6 +57,7 @@ int main(void) {
 
     for (i = 0; i < NTHREADS; i++)
         pthread_join(threads[i], NULL);
+    pthread_join(reader, NULL);
 
     chan_destroy(ch);
     return 0;
