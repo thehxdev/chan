@@ -8,9 +8,10 @@
 #define CHAN_CAP 5
 #define CHAN_DSIZE sizeof(int)
 #define TO_PUSH 5
-#define NTHREADS 4
+#define CONSUMERS_COUNT 4
+#define PRODUCERS_COUNT CONSUMERS_COUNT
 
-void *thread_routine(void *arg) {
+void *producer(void *arg) {
     int i;
     Chan_t *ch = *(Chan_t**)arg;
 
@@ -22,10 +23,10 @@ void *thread_routine(void *arg) {
     return NULL;
 }
 
-void *thread_reader_routine(void *arg) {
+void *consumer(void *arg) {
     int i, v;
     Chan_t *ch = *(Chan_t**)arg;
-    for (i = 0; i < TO_PUSH*2; i++) {
+    for (i = 0; i < TO_PUSH; i++) {
         if (chan_pop(ch, &v)) {
             printf("pop error\n");
             break;
@@ -36,28 +37,25 @@ void *thread_reader_routine(void *arg) {
 }
 
 int main(void) {
-    int i, v;
+    int i;
+    pthread_t producers[PRODUCERS_COUNT];
+    pthread_t consumers[CONSUMERS_COUNT];
 
     Chan_t *ch = chan_new(CHAN_CAP, CHAN_DSIZE);
     assert(ch);
 
-    pthread_t threads[NTHREADS];
-    for (i = 0; i < NTHREADS; i++)
-        pthread_create(&threads[i], NULL, thread_routine, &ch);
+    // Create producer threads
+    for (i = 0; i < PRODUCERS_COUNT; i++)
+        pthread_create(&producers[i], NULL, producer, &ch);
 
-    pthread_t reader;
-    pthread_create(&reader, NULL, thread_reader_routine, &ch);
-    for (i = 0; i < TO_PUSH*2; i++) {
-        if (chan_pop(ch, &v)) {
-            printf("pop error\n");
-            break;
-        }
-        printf("%d: %d\n", i, v);
-    }
+    for (i = 0; i < CONSUMERS_COUNT; i++)
+        pthread_create(&consumers[i], NULL, consumer, &ch);
 
-    for (i = 0; i < NTHREADS; i++)
-        pthread_join(threads[i], NULL);
-    pthread_join(reader, NULL);
+    for (i = 0; i < PRODUCERS_COUNT; i++)
+        pthread_join(producers[i], NULL);
+
+    for (i = 0; i < CONSUMERS_COUNT; i++)
+        pthread_join(consumers[i], NULL);
 
     chan_destroy(ch);
     return 0;
