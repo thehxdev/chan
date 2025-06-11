@@ -1,12 +1,20 @@
-CC = clang
+CC = cc
 CFLAGS = -std=c99 -Wall -Wextra
 LDFLAGS =
 LIBS = -lpthread
+
+ifeq ($(CC), clang)
+	LDFLAGS += -fuse-ld=lld
+endif
 
 ifeq ($(OPTIMIZE), 1)
 	CFLAGS += -O3 -DNDEBUG
 else
 	CFLAGS += -Og -ggdb
+	ifeq ($(CC), clang)
+		# sanitizers are in conflict with valgrind
+		LDFLAGS += -fsanitize=thread,undefined
+	endif
 endif
 
 
