@@ -51,9 +51,10 @@ int main(void) {
     for (i = 0; i < PRODUCERS_COUNT; i++)
         pthread_join(producers[i], NULL);
 
-    // Close the channel. Closing the channel causes `chan_pop` return
-    // non-zero integer indicating that channel is closed and also empty.
-    // So consumer threads terminate.
+    // Close the channel. Closing the channel causes `chan_pop` return non-zero
+    // integer value indicating that the channel is closed and also empty. So
+    // consumer threads terminate after consuming all of the elements in the
+    // channel.
     chan_close(ch);
     for (i = 0; i < CONSUMERS_COUNT; i++)
         pthread_join(consumers[i], NULL);
