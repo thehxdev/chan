@@ -1,5 +1,5 @@
 /*
- * Thread-Safe Queue data structure implementation.
+ * Generic and thread-safe FIFO (Queue) data structure implementation similar to Go channels.
  */
 
 #ifdef __cplusplus
@@ -17,6 +17,7 @@ extern "C" {
 #define QUEUE_REAR_INITIAL  (0)
 #define QUEUE_FRONT_INITIAL (0)
 
+// last operation done on queue
 enum {
     OP_DEQ,
     OP_ENQ,
@@ -140,7 +141,7 @@ extern int chan_push(Chan_t *ch, void *val) {
     assert(val);
     int err = 0;
     pthread_mutex_lock(&ch->lock);
-    // crash if channel is closed
+    // crash if channel is closed in debug builds
     assert(!ch->closed);
     if (ch->closed) {
         err = 1;
