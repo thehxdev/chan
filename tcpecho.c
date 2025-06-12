@@ -36,6 +36,8 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <pthread.h>
+#include <signal.h>
+#include <errno.h>
 #include "chan.h"
 
 // Up to NWORKERS concurrent connections
@@ -45,6 +47,8 @@
 #define BUFFER_SIZE 128
 #define SH_BUFFER_SIZE BUFFER_SIZE
 #define LISTEN_BACKLOG NWORKERS
+
+static volatile sig_atomic_t running = 1;
 
 // Gracefully close the socket
 // https://blog.netherlabs.nl/articles/2009/01/18/the-ultimate-so_linger-page-or-why-is-my-tcp-not-reliable
@@ -83,9 +87,23 @@ void *worker(void *arg) {
     return NULL;
 }
 
+void sigint_handler(int signum) {
+    (void)signum;
+    running = 0;
+}
+
 int main(void) {
     int i;
     int err = EXIT_SUCCESS;
+
+    struct sigaction sa = {0};
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(EXIT_FAILURE);
+    }
 
     // server listen address
     struct sockaddr_in saddr = {0};
@@ -123,9 +141,11 @@ int main(void) {
         pthread_create(&workers[i], NULL, worker, (void*)clientfds);
 
     printf("Listening on " SERVER_ADDR ":%d\n", SERVER_PORT);
-    while (1) {
+    while (running) {
         int clientfd = accept(sockfd, NULL, NULL);
         if (clientfd == -1) {
+            if (errno == EINTR)
+                continue;
             perror("accept");
             break;
         }
@@ -137,6 +157,7 @@ int main(void) {
     }
 
     chan_close(clientfds);
+    printf("waiting for workers to exit\n");
     for (i = 0; i < NWORKERS; i++)
         pthread_join(workers[i], NULL);
     chan_destroy(clientfds);
