@@ -1,5 +1,5 @@
 CC ?= cc
-CFLAGS = -std=c99 -Wall -Wextra
+CFLAGS = -std=gnu99 -Wall -Wextra
 LDFLAGS =
 LIBS = -lpthread
 
