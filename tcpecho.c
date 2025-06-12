@@ -44,7 +44,7 @@
 #define SERVER_PORT 8080
 #define BUFFER_SIZE 128
 #define SH_BUFFER_SIZE BUFFER_SIZE
-#define LISTEN_BACKLOG 128
+#define LISTEN_BACKLOG NWORKERS
 
 // Gracefully close the socket
 // https://blog.netherlabs.nl/articles/2009/01/18/the-ultimate-so_linger-page-or-why-is-my-tcp-not-reliable
