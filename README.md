@@ -2,6 +2,9 @@
 Chan is a generic, thread-safe, concurrent FIFO (Queue data structure) implementation similar to Go channles in C99.
 It supports buffered and unbuffered modes.
 
+> [!NOTE]
+> The library itself (`chan.c` and `chan.h`) is implemented with ANSI C99 standard. But some examples use gnu99 standard for non-std functionalities.
+
 > [!WARNING]
 > This project is for learning purposes. Do NOT use this in production or your projects.
 
